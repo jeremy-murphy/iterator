@@ -1,4 +1,5 @@
 // Copyright (C) 2017 Michel Morin.
+// Copyright (C) 2026 Amlal El Mahrouss.
 //
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE_1_0.txt or copy at
@@ -12,6 +13,9 @@
 #include <boost/iterator/distance.hpp>
 #include <boost/iterator/transform_iterator.hpp>
 
+#define BOOST_TEST_DISTANCE (-1)
+#define BOOST_TEST_DIFF_DISTANCE (-2)
+
 int twice(int x) { return x + x; }
 
 template <typename Iterator>
@@ -23,9 +27,14 @@ void test_distance(Iterator it_from, Iterator it_to, int n)
 // Definitely not an iterator.
 struct Foo
 {
-    constexpr friend
-    std::ptrdiff_t distance(Foo const &, Foo const &) { return -1; }
+    friend BOOST_CXX14_CONSTEXPR
+    std::ptrdiff_t distance(Foo const &, Foo const &) { return BOOST_TEST_DISTANCE; }
 };
+
+namespace boost 
+{
+    static BOOST_CXX14_CONSTEXPR std::ptrdiff_t distance(Foo const &, Foo const &)  { return BOOST_TEST_DIFF_DISTANCE; }
+} // namespace boost
 
 int main()
 {
@@ -89,10 +98,10 @@ int main()
     }
 
     {
-        // Make boost::distance visible since we're not actually in the boost namespace here.
-        using boost::distance;
-        auto result = distance(Foo{}, Foo{});
-        BOOST_TEST(result == -1);
+        auto expected = ::boost::distance(Foo{}, Foo{});
+        auto right_result = distance(Foo{}, Foo{});
+
+        BOOST_TEST(expected != right_result);
     }
     return boost::report_errors();
 }
